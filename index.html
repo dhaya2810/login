@@ -92,6 +92,7 @@
             width: 100%;
             max-width: 420px;
             padding: 40px;
+            position: relative;
         }
 
         .logo {
@@ -204,6 +205,15 @@
 
         .btn-primary:hover {
             background-color: #e68a00;
+        }
+
+        .btn-secondary {
+            background-color: #6c757d;
+            color: white;
+        }
+
+        .btn-secondary:hover {
+            background-color: #5a6268;
         }
 
         .divider {
@@ -371,6 +381,71 @@
             color: #721c24;
             border: 1px solid #f5c6cb;
         }
+        
+        .info {
+            background-color: #d1ecf1;
+            color: #0c5460;
+            border: 1px solid #bee5eb;
+        }
+        
+        /* Forgot Password Modal */
+        .modal-overlay {
+            display: none;
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background-color: rgba(0, 0, 0, 0.5);
+            z-index: 1000;
+            justify-content: center;
+            align-items: center;
+        }
+        
+        .modal {
+            background-color: white;
+            border-radius: 12px;
+            box-shadow: 0 5px 15px rgba(0, 0, 0, 0.2);
+            width: 100%;
+            max-width: 400px;
+            padding: 30px;
+            position: relative;
+        }
+        
+        .modal-header {
+            margin-bottom: 20px;
+            text-align: center;
+        }
+        
+        .modal-header h2 {
+            color: orange;
+            font-size: 24px;
+        }
+        
+        .modal-close {
+            position: absolute;
+            top: 15px;
+            right: 15px;
+            background: none;
+            border: none;
+            font-size: 20px;
+            cursor: pointer;
+            color: #666;
+        }
+        
+        .modal-close:hover {
+            color: #333;
+        }
+        
+        .modal-footer {
+            margin-top: 20px;
+            display: flex;
+            justify-content: space-between;
+        }
+        
+        .modal-footer .btn {
+            width: 48%;
+        }
     </style>
 </head>
 <body>
@@ -402,7 +477,7 @@
                             <input type="checkbox" id="remember">
                             <label for="remember">Remember me</label>
                         </div>
-                        <a href="#" class="forgot-password">Forgot password?</a>
+                        <a href="#" class="forgot-password" id="forgot-password-link">Forgot password?</a>
                     </div>
                     <button type="submit" class="btn btn-primary">Login</button>
                 </form>
@@ -469,6 +544,27 @@
                     <a href="#" id="skip-signup">Skip for now</a>
                 </div>
             </div>
+        </div>
+    </div>
+
+    <!-- Forgot Password Modal -->
+    <div class="modal-overlay" id="forgot-password-modal">
+        <div class="modal">
+            <button class="modal-close" id="close-forgot-password">&times;</button>
+            <div class="modal-header">
+                <h2>Reset Your Password</h2>
+            </div>
+            <div id="forgot-password-message" class="message"></div>
+            <form id="forgot-password-form">
+                <div class="form-group">
+                    <label for="reset-email">Email Address</label>
+                    <input type="email" id="reset-email" placeholder="Enter your email address" required>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-secondary" id="cancel-forgot-password">Cancel</button>
+                    <button type="submit" class="btn btn-primary">Send Reset Link</button>
+                </div>
+            </form>
         </div>
     </div>
 
@@ -609,6 +705,68 @@
                 });
         });
 
+        // Forgot Password Functionality
+        document.getElementById('forgot-password-link').addEventListener('click', function(e) {
+            e.preventDefault();
+            document.getElementById('forgot-password-modal').style.display = 'flex';
+            document.getElementById('reset-email').value = document.getElementById('login-email').value || '';
+        });
+
+        document.getElementById('close-forgot-password').addEventListener('click', function() {
+            document.getElementById('forgot-password-modal').style.display = 'none';
+            resetForgotPasswordForm();
+        });
+
+        document.getElementById('cancel-forgot-password').addEventListener('click', function() {
+            document.getElementById('forgot-password-modal').style.display = 'none';
+            resetForgotPasswordForm();
+        });
+
+        document.getElementById('forgot-password-form').addEventListener('submit', function(e) {
+            e.preventDefault();
+            const email = document.getElementById('reset-email').value;
+            
+            if (!email) {
+                showMessage('forgot-password-message', 'Please enter your email address', 'error');
+                return;
+            }
+            
+            // Show loading state
+            const resetBtn = this.querySelector('.btn-primary');
+            const originalText = resetBtn.textContent;
+            resetBtn.textContent = 'Sending...';
+            resetBtn.disabled = true;
+            
+            // Send password reset email
+            auth.sendPasswordResetEmail(email)
+                .then(() => {
+                    showMessage('forgot-password-message', 'Password reset email sent! Check your inbox.', 'success');
+                    console.log('Password reset email sent to:', email);
+                    
+                    // Close modal after a delay
+                    setTimeout(() => {
+                        document.getElementById('forgot-password-modal').style.display = 'none';
+                        resetForgotPasswordForm();
+                    }, 3000);
+                })
+                .catch((error) => {
+                    const errorCode = error.code;
+                    const errorMessage = error.message;
+                    showMessage('forgot-password-message', getErrorMessage(errorCode), 'error');
+                    console.error('Password reset error:', errorCode, errorMessage);
+                })
+                .finally(() => {
+                    // Reset button
+                    resetBtn.textContent = originalText;
+                    resetBtn.disabled = false;
+                });
+        });
+
+        function resetForgotPasswordForm() {
+            document.getElementById('forgot-password-form').reset();
+            document.getElementById('forgot-password-message').style.display = 'none';
+        }
+
         // Google authentication
         function signInWithGoogle() {
             const provider = new firebase.auth.GoogleAuthProvider();
@@ -678,10 +836,12 @@
             element.className = `message ${type}`;
             element.style.display = 'block';
             
-            // Auto-hide after 5 seconds
-            setTimeout(() => {
-                element.style.display = 'none';
-            }, 5000);
+            // Auto-hide after 5 seconds (except for success messages in modal)
+            if (elementId !== 'forgot-password-message' || type !== 'success') {
+                setTimeout(() => {
+                    element.style.display = 'none';
+                }, 5000);
+            }
         }
 
         function getErrorMessage(errorCode) {
@@ -704,6 +864,8 @@
                     return 'An account already exists with the same email but different sign-in credentials.';
                 case 'auth/popup-closed-by-user':
                     return 'Authentication popup was closed.';
+                case 'auth/too-many-requests':
+                    return 'Too many unsuccessful login attempts. Please try again later.';
                 default:
                     return 'An error occurred. Please try again.';
             }
