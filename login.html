@@ -1,0 +1,752 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Login / Sign Up</title>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    
+    <!-- Firebase SDK -->
+    <script src="https://www.gstatic.com/firebasejs/9.22.2/firebase-app-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/9.22.2/firebase-auth-compat.js"></script>
+    
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+        }
+
+        html, body {
+            height: 100%;
+            margin: 0;
+            padding: 0;
+        }
+
+        body {
+            display: flex;
+            flex-direction: column;
+            background-color: #f4f4f4;
+            color: #333;
+        }
+
+        /* Header Styles */
+        header {
+            background-color: rgba(1, 1, 1, 0.82);
+            color: #fff;
+            padding: 15px 15px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+            
+        header h1 {
+            position: relative;
+            margin: 0;
+            font-size: 2.2rem;
+            font-family: 'Gill Sans', 'Gill Sans MT', Calibri, 'Trebuchet MS', sans-serif;
+        }
+
+        nav ul {
+            list-style: none;
+            padding: 0;
+            margin: 0;
+            display: flex;
+            align-items: center;
+            justify-content: flex-end;
+        }
+
+        nav ul li {
+            margin: 10px;
+            font-family: 'Gill Sans', 'Gill Sans MT', Calibri, 'Trebuchet MS', sans-serif;
+        }
+
+        nav ul li a {
+            color: #fff;
+            text-decoration: none;
+            padding: 0.2rem 0.5rem;
+            border: 2.5px solid orange;
+            transition: all 0.3s ease;
+        }
+
+        nav ul li a:hover {
+            border: 2.5px solid rgb(0, 0, 0);
+            background-color: orange;
+            color: black;
+        }
+
+        /* Main Content */
+        .main-content {
+            flex: 1;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            padding: 20px;
+        }
+
+        .container {
+            background-color: white;
+            border-radius: 12px;
+            box-shadow: 0 5px 15px rgba(0, 0, 0, 0.1);
+            width: 100%;
+            max-width: 420px;
+            padding: 40px;
+        }
+
+        .logo {
+            text-align: center;
+            margin-bottom: 30px;
+        }
+
+        .logo h1 {
+            color: orange;
+            font-size: 28px;
+            font-weight: 600;
+        }
+
+        .tabs {
+            display: flex;
+            margin-bottom: 25px;
+            border-bottom: 1px solid #eaeaea;
+        }
+
+        .tab {
+            flex: 1;
+            text-align: center;
+            padding: 12px 0;
+            cursor: pointer;
+            font-weight: 500;
+            color: #666;
+            transition: all 0.3s ease;
+        }
+
+        .tab.active {
+            color: orange;
+            border-bottom: 2px solid orange;
+        }
+
+        .form-container {
+            display: none;
+        }
+
+        .form-container.active {
+            display: block;
+        }
+
+        .form-group {
+            margin-bottom: 20px;
+        }
+
+        .form-group label {
+            display: block;
+            margin-bottom: 8px;
+            font-weight: 500;
+            color: #333;
+        }
+
+        .form-group input {
+            width: 100%;
+            padding: 12px 15px;
+            border: 1px solid #ddd;
+            border-radius: 6px;
+            font-size: 16px;
+            transition: border 0.3s ease;
+        }
+
+        .form-group input:focus {
+            border-color: orange;
+            outline: none;
+            box-shadow: 0 2px 3px rgba(255, 165, 0, 0.3);
+        }
+
+        .remember-forgot {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 20px;
+        }
+
+        .remember {
+            display: flex;
+            align-items: center;
+        }
+
+        .remember input {
+            margin-right: 8px;
+        }
+
+        .forgot-password {
+            color: orange;
+            text-decoration: none;
+            font-size: 14px;
+        }
+
+        .forgot-password:hover {
+            text-decoration: underline;
+        }
+
+        .btn {
+            width: 100%;
+            padding: 12px;
+            border: none;
+            border-radius: 6px;
+            font-size: 16px;
+            font-weight: 500;
+            cursor: pointer;
+            transition: background-color 0.3s ease;
+        }
+
+        .btn-primary {
+            background-color: orange;
+            color: white;
+        }
+
+        .btn-primary:hover {
+            background-color: #e68a00;
+        }
+
+        .divider {
+            text-align: center;
+            margin: 25px 0;
+            position: relative;
+            color: #777;
+        }
+
+        .divider::before {
+            content: "";
+            position: absolute;
+            top: 50%;
+            left: 0;
+            right: 0;
+            height: 1px;
+            background-color: #eaeaea;
+            z-index: 1;
+        }
+
+        .divider span {
+            background-color: white;
+            padding: 0 15px;
+            position: relative;
+            z-index: 2;
+        }
+
+        .btn-google {
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            background-color: white;
+            border: 1px solid #ddd;
+            color: #444;
+            margin-bottom: 20px;
+        }
+
+        .btn-google:hover {
+            background-color: #f9f9f9;
+        }
+
+        .google-icon {
+            width: 18px;
+            height: 18px;
+            margin-right: 10px;
+        }
+
+        .skip-later {
+            text-align: center;
+            margin-top: 20px;
+        }
+
+        .skip-later a {
+            color: #666;
+            text-decoration: none;
+            font-size: 14px;
+        }
+
+        .skip-later a:hover {
+            color: orange;
+            text-decoration: underline;
+        }
+
+        /* Footer */
+        footer {
+            background-color: #333;
+            color: #fff;
+            text-align: center;
+            padding: 15px;
+        }
+
+        /* Cookie Consent */
+        #cookieConsent {
+            position: fixed;
+            bottom: 20px;
+            left: 50%;
+            transform: translateX(-50%);
+            background: rgba(0, 0, 0, 0.85);
+            color: white;
+            padding: 15px 20px;
+            border-radius: 8px;
+            text-align: center;
+            z-index: 1000;
+            display: none;
+            box-shadow: 0px 4px 6px rgba(0, 0, 0, 0.3);
+            width: 350px;
+        }
+
+        .cookie-options {
+            text-align: left;
+            margin-top: 10px;
+        }
+
+        .cookie-options label {
+            display: block;
+            font-size: 14px;
+        }
+
+        .cookie-buttons {
+            margin-top: 15px;
+        }
+
+        #acceptAllCookies, #saveCookiePreferences {
+            background: orange;
+            color: white;
+            border: none;
+            padding: 8px 15px;
+            margin: 5px;
+            border-radius: 5px;
+            cursor: pointer;
+            transition: 0.3s;
+        }
+
+        #acceptAllCookies:hover, #saveCookiePreferences:hover {
+            background: #e68a00;
+        }
+
+        #manageCookies {
+            display: block;
+            margin-top: 10px;
+            color: orange;
+            text-decoration: underline;
+            cursor: pointer;
+        }
+
+        @media (max-width: 480px) {
+            .container {
+                padding: 30px 20px;
+            }
+        }
+        
+        /* Loading spinner */
+        .spinner {
+            display: none;
+            border: 4px solid rgba(255, 165, 0, 0.3);
+            border-radius: 50%;
+            border-top: 4px solid orange;
+            width: 30px;
+            height: 30px;
+            animation: spin 1s linear infinite;
+            margin: 0 auto;
+        }
+        
+        @keyframes spin {
+            0% { transform: rotate(0deg); }
+            100% { transform: rotate(360deg); }
+        }
+        
+        .message {
+            padding: 10px;
+            margin: 10px 0;
+            border-radius: 5px;
+            text-align: center;
+            display: none;
+        }
+        
+        .success {
+            background-color: #d4edda;
+            color: #155724;
+            border: 1px solid #c3e6cb;
+        }
+        
+        .error {
+            background-color: #f8d7da;
+            color: #721c24;
+            border: 1px solid #f5c6cb;
+        }
+    </style>
+</head>
+<body>
+    <div class="main-content">
+        <div class="container">
+            <div class="logo">
+                <h1>Welcome to EventHub</h1>
+            </div>
+
+            <div class="tabs">
+                <div class="tab active" data-tab="login">Login</div>
+                <div class="tab" data-tab="signup">Sign Up</div>
+            </div>
+
+            <!-- Login Form -->
+            <div class="form-container active" id="login-form">
+                <div id="login-message" class="message"></div>
+                <form id="loginForm">
+                    <div class="form-group">
+                        <label for="login-email">Email</label>
+                        <input type="email" id="login-email" placeholder="Enter your email" required>
+                    </div>
+                    <div class="form-group">
+                        <label for="login-password">Password</label>
+                        <input type="password" id="login-password" placeholder="Enter your password" required>
+                    </div>
+                    <div class="remember-forgot">
+                        <div class="remember">
+                            <input type="checkbox" id="remember">
+                            <label for="remember">Remember me</label>
+                        </div>
+                        <a href="#" class="forgot-password">Forgot password?</a>
+                    </div>
+                    <button type="submit" class="btn btn-primary">Login</button>
+                </form>
+
+                <div class="divider">
+                    <span>Or continue with</span>
+                </div>
+
+                <button class="btn btn-google" id="google-login">
+                    <svg class="google-icon" viewBox="0 0 24 24" width="24" height="24">
+                        <path fill="#4285F4" d="M22.56 12.25c0-.78-.07-1.53-.2-2.25H12v4.26h5.92c-.26 1.37-1.04 2.53-2.21 3.31v2.77h3.57c2.08-1.92 3.28-4.74 3.28-8.09z"/>
+                        <path fill="#34A853" d="M12 23c2.97 0 5.46-.98 7.28-2.66l-3.57-2.77c-.98.66-2.23 1.06-3.71 1.06-2.86 0-5.29-1.93-6.16-4.53H2.18v2.84C3.99 20.53 7.7 23 12 23z"/>
+                        <path fill="#FBBC05" d="M5.84 14.09c-.22-.66-.35-1.36-.35-2.09s.13-1.43.35-2.09V7.07H2.18C1.43 8.55 1 10.22 1 12s.43 3.45 1.18 4.93l2.85-2.22.81-.62z"/>
+                        <path fill="#EA4335" d="M12 5.38c1.62 0 3.06.56 4.21 1.64l3.15-3.15C17.45 2.09 14.97 1 12 1 7.7 1 3.99 3.47 2.18 7.07l3.66 2.84c.87-2.6 3.3-4.53 6.16-4.53z"/>
+                    </svg>
+                    Continue with Google
+                </button>
+                <div class="spinner" id="google-login-spinner"></div>
+
+                <div class="skip-later">
+                    <a href="#" id="skip-login">Skip for now</a>
+                </div>
+            </div>
+
+            <!-- Sign Up Form -->
+            <div class="form-container" id="signup-form">
+                <div id="signup-message" class="message"></div>
+                <form id="signupForm">
+                    <div class="form-group">
+                        <label for="signup-name">Full Name</label>
+                        <input type="text" id="signup-name" placeholder="Enter your full name" required>
+                    </div>
+                    <div class="form-group">
+                        <label for="signup-email">Email</label>
+                        <input type="email" id="signup-email" placeholder="Enter your email" required>
+                    </div>
+                    <div class="form-group">
+                        <label for="signup-password">Password</label>
+                        <input type="password" id="signup-password" placeholder="Create a password" required>
+                    </div>
+                    <div class="form-group">
+                        <label for="signup-confirm-password">Confirm Password</label>
+                        <input type="password" id="signup-confirm-password" placeholder="Confirm your password" required>
+                    </div>
+                    <button type="submit" class="btn btn-primary">Create Account</button>
+                </form>
+
+                <div class="divider">
+                    <span>Or continue with</span>
+                </div>
+
+                <button class="btn btn-google" id="google-signup">
+                    <svg class="google-icon" viewBox="0 0 24 24" width="24" height="24">
+                        <path fill="#4285F4" d="M22.56 12.25c0-.78-.07-1.53-.2-2.25H12v4.26h5.92c-.26 1.37-1.04 2.53-2.21 3.31v2.77h3.57c2.08-1.92 3.28-4.74 3.28-8.09z"/>
+                        <path fill="#34A853" d="M12 23c2.97 0 5.46-.98 7.28-2.66l-3.57-2.77c-.98.66-2.23 1.06-3.71 1.06-2.86 0-5.29-1.93-6.16-4.53H2.18v2.84C3.99 20.53 7.7 23 12 23z"/>
+                        <path fill="#FBBC05" d="M5.84 14.09c-.22-.66-.35-1.36-.35-2.09s.13-1.43.35-2.09V7.07H2.18C1.43 8.55 1 10.22 1 12s.43 3.45 1.18 4.93l2.85-2.22.81-.62z"/>
+                        <path fill="#EA4335" d="M12 5.38c1.62 0 3.06.56 4.21 1.64l3.15-3.15C17.45 2.09 14.97 1 12 1 7.7 1 3.99 3.47 2.18 7.07l3.66 2.84c.87-2.6 3.3-4.53 6.16-4.53z"/>
+                    </svg>
+                    Continue with Google
+                </button>
+                <div class="spinner" id="google-signup-spinner"></div>
+
+                <div class="skip-later">
+                    <a href="#" id="skip-signup">Skip for now</a>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <footer>
+        <p>&copy; 2025 Event Finder. All rights reserved.</p>
+    </footer>
+
+    <script>
+        // Firebase configuration
+        const firebaseConfig = {
+            apiKey: "AIzaSyDhpkHtDjrKCK1f6meQ4BH9nJ81YmCuW14",
+            authDomain: "event-finderr.firebaseapp.com",
+            projectId: "event-finderr",
+            storageBucket: "event-finderr.firebasestorage.app",
+            messagingSenderId: "401586956639",
+            appId: "1:401586956639:web:7f52793863f328a35c2eea",
+            measurementId: "G-FW0XB1R38R"
+        };
+
+        // Initialize Firebase
+        firebase.initializeApp(firebaseConfig);
+        const auth = firebase.auth();
+
+        // Tab switching functionality
+        document.querySelectorAll('.tab').forEach(tab => {
+            tab.addEventListener('click', () => {
+                // Remove active class from all tabs
+                document.querySelectorAll('.tab').forEach(t => {
+                    t.classList.remove('active');
+                });
+                
+                // Add active class to clicked tab
+                tab.classList.add('active');
+                
+                // Hide all forms
+                document.querySelectorAll('.form-container').forEach(form => {
+                    form.classList.remove('active');
+                });
+                
+                // Show the selected form
+                const tabId = tab.getAttribute('data-tab');
+                document.getElementById(`${tabId}-form`).classList.add('active');
+            });
+        });
+
+        // Form submission handling
+        document.getElementById('loginForm').addEventListener('submit', function(e) {
+            e.preventDefault();
+            const email = document.getElementById('login-email').value;
+            const password = document.getElementById('login-password').value;
+            
+            // Show loading state
+            const loginBtn = this.querySelector('.btn-primary');
+            const originalText = loginBtn.textContent;
+            loginBtn.textContent = 'Logging in...';
+            loginBtn.disabled = true;
+            
+            // Firebase email/password login
+            auth.signInWithEmailAndPassword(email, password)
+                .then((userCredential) => {
+                    // Signed in
+                    const user = userCredential.user;
+                    showMessage('login-message', `Welcome back, ${user.email}!`, 'success');
+                    console.log('User logged in:', user);
+                    
+                    // In a real app, you would redirect to the main page
+                    setTimeout(() => {
+                        alert('Login successful! Redirecting to main page...');
+                        // window.location.href = 'dashboard.html';
+                    }, 1500);
+                })
+                .catch((error) => {
+                    const errorCode = error.code;
+                    const errorMessage = error.message;
+                    showMessage('login-message', getErrorMessage(errorCode), 'error');
+                    console.error('Login error:', errorCode, errorMessage);
+                })
+                .finally(() => {
+                    // Reset button
+                    loginBtn.textContent = originalText;
+                    loginBtn.disabled = false;
+                });
+        });
+
+        document.getElementById('signupForm').addEventListener('submit', function(e) {
+            e.preventDefault();
+            const name = document.getElementById('signup-name').value;
+            const email = document.getElementById('signup-email').value;
+            const password = document.getElementById('signup-password').value;
+            const confirmPassword = document.getElementById('signup-confirm-password').value;
+            
+            if (password !== confirmPassword) {
+                showMessage('signup-message', 'Passwords do not match', 'error');
+                return;
+            }
+            
+            if (password.length < 6) {
+                showMessage('signup-message', 'Password should be at least 6 characters', 'error');
+                return;
+            }
+            
+            // Show loading state
+            const signupBtn = this.querySelector('.btn-primary');
+            const originalText = signupBtn.textContent;
+            signupBtn.textContent = 'Creating Account...';
+            signupBtn.disabled = true;
+            
+            // Firebase email/password signup
+            auth.createUserWithEmailAndPassword(email, password)
+                .then((userCredential) => {
+                    // Signed up
+                    const user = userCredential.user;
+                    
+                    // Update profile with name
+                    return user.updateProfile({
+                        displayName: name
+                    }).then(() => {
+                        showMessage('signup-message', `Account created for ${name}!`, 'success');
+                        console.log('User signed up:', user);
+                        
+                        // In a real app, you would redirect to the main page
+                        setTimeout(() => {
+                            alert('Account created successfully! Redirecting to main page...');
+                            // window.location.href = 'dashboard.html';
+                        }, 1500);
+                    });
+                })
+                .catch((error) => {
+                    const errorCode = error.code;
+                    const errorMessage = error.message;
+                    showMessage('signup-message', getErrorMessage(errorCode), 'error');
+                    console.error('Signup error:', errorCode, errorMessage);
+                })
+                .finally(() => {
+                    // Reset button
+                    signupBtn.textContent = originalText;
+                    signupBtn.disabled = false;
+                });
+        });
+
+        // Google authentication
+        function signInWithGoogle() {
+            const provider = new firebase.auth.GoogleAuthProvider();
+            
+            // Show loading spinner
+            document.getElementById('google-login-spinner').style.display = 'block';
+            document.getElementById('google-signup-spinner').style.display = 'block';
+            
+            auth.signInWithPopup(provider)
+                .then((result) => {
+                    // This gives you a Google Access Token
+                    const credential = result.credential;
+                    const token = credential.accessToken;
+                    
+                    // The signed-in user info
+                    const user = result.user;
+                    
+                    console.log('Google sign-in successful:', user);
+                    showMessage('login-message', `Welcome, ${user.displayName}!`, 'success');
+                    showMessage('signup-message', `Welcome, ${user.displayName}!`, 'success');
+                    
+                    // In a real app, you would redirect to the main page
+                    setTimeout(() => {
+                        alert('Google authentication successful! Redirecting to main page...');
+                        // window.location.href = 'dashboard.html';
+                    }, 1500);
+                })
+                .catch((error) => {
+                    // Handle Errors here
+                    const errorCode = error.code;
+                    const errorMessage = error.message;
+                    const email = error.email;
+                    const credential = error.credential;
+                    
+                    console.error('Google sign-in error:', errorCode, errorMessage);
+                    showMessage('login-message', getErrorMessage(errorCode), 'error');
+                    showMessage('signup-message', getErrorMessage(errorCode), 'error');
+                })
+                .finally(() => {
+                    // Hide loading spinner
+                    document.getElementById('google-login-spinner').style.display = 'none';
+                    document.getElementById('google-signup-spinner').style.display = 'none';
+                });
+        }
+
+        // Google authentication buttons
+        document.getElementById('google-login').addEventListener('click', signInWithGoogle);
+        document.getElementById('google-signup').addEventListener('click', signInWithGoogle);
+
+        // Skip for now buttons
+        document.getElementById('skip-login').addEventListener('click', function(e) {
+            e.preventDefault();
+            console.log('User skipped login');
+            alert('You can continue without an account. In a real app, this would redirect to the main content.');
+        });
+
+        document.getElementById('skip-signup').addEventListener('click', function(e) {
+            e.preventDefault();
+            console.log('User skipped signup');
+            alert('You can continue without an account. In a real app, this would redirect to the main content.');
+        });
+
+        // Utility functions
+        function showMessage(elementId, message, type) {
+            const element = document.getElementById(elementId);
+            element.textContent = message;
+            element.className = `message ${type}`;
+            element.style.display = 'block';
+            
+            // Auto-hide after 5 seconds
+            setTimeout(() => {
+                element.style.display = 'none';
+            }, 5000);
+        }
+
+        function getErrorMessage(errorCode) {
+            switch(errorCode) {
+                case 'auth/invalid-email':
+                    return 'Invalid email address.';
+                case 'auth/user-disabled':
+                    return 'This account has been disabled.';
+                case 'auth/user-not-found':
+                    return 'No account found with this email.';
+                case 'auth/wrong-password':
+                    return 'Incorrect password.';
+                case 'auth/email-already-in-use':
+                    return 'An account with this email already exists.';
+                case 'auth/weak-password':
+                    return 'Password is too weak.';
+                case 'auth/operation-not-allowed':
+                    return 'Email/password accounts are not enabled.';
+                case 'auth/account-exists-with-different-credential':
+                    return 'An account already exists with the same email but different sign-in credentials.';
+                case 'auth/popup-closed-by-user':
+                    return 'Authentication popup was closed.';
+                default:
+                    return 'An error occurred. Please try again.';
+            }
+        }
+
+        // Check if user is already logged in
+        auth.onAuthStateChanged((user) => {
+            if (user) {
+                console.log('User is already logged in:', user);
+                // In a real app, you might want to redirect to the main page
+                // window.location.href = 'dashboard.html';
+            }
+        });
+
+        // Cookie consent functionality (if you add the HTML back)
+        document.addEventListener('DOMContentLoaded', function() {
+            const cookieConsent = document.getElementById('cookieConsent');
+            
+            // Show cookie consent after a delay (if not already accepted)
+            setTimeout(() => {
+                if (!localStorage.getItem('cookiesAccepted')) {
+                    // cookieConsent.style.display = 'block';
+                }
+            }, 1000);
+
+            // Accept all cookies
+            if (document.getElementById('acceptAllCookies')) {
+                document.getElementById('acceptAllCookies').addEventListener('click', function() {
+                    localStorage.setItem('cookiesAccepted', 'all');
+                    // cookieConsent.style.display = 'none';
+                    alert('All cookies accepted!');
+                });
+            }
+
+            // Save cookie preferences
+            if (document.getElementById('saveCookiePreferences')) {
+                document.getElementById('saveCookiePreferences').addEventListener('click', function() {
+                    localStorage.setItem('cookiesAccepted', 'custom');
+                    // cookieConsent.style.display = 'none';
+                    alert('Cookie preferences saved!');
+                });
+            }
+        });
+    </script>
+</body>
+</html>
